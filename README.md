@@ -5,32 +5,21 @@
 
 ## 主要功能
 
-- **读取灰度图像**
+- **灰度图像处理**：读取并处理灰度图像
+- **FFT运算**：执行傅里叶变换生成频域复数矩阵
+- **频谱可视化**：可视化频率谱分析结果
+- **IFFT重建**：执行逆变换重建原始图像
+- **低通滤波**：实现多级滤波能力
 
-- **FFT运算，生成频域复数矩阵并可视化**
-
-- **IFFT，重建原始图像**
-
-- **低通滤波**
-
-## 目录结构
-
+## 使用方法
+### Ubuntu/Debian系统
 ```bash
-.
-├── data
-│   ├── input_image.png
-│   └── miku.png
-├── src
-│   └── fft_image_processor.cpp
-├── bin
-│   └── fft_processor
-├── Makefile
-└── output
-    ├── fft_analysis_report.txt
-    ├── filtered_5.png
-    ├── filtered_10.png
-    ├── filtered_20.png
-    ├── filtered_30.png
-    ├── frequency_spectrum.png
-    ├── input_image.png
-    └── reconstructed_image.png
+sudo apt install libopencv-dev  # 安装OpenCV依赖库
+make                            # 编译项目
+./fft_processor                 # 运行处理器程序
+
+### Ubuntu/Debian
+```bash
+sudo apt install libopencv-dev
+make
+./fft_processor
