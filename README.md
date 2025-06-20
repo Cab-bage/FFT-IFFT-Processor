@@ -12,14 +12,8 @@
 - **低通滤波**：实现多级滤波能力
 
 ## 使用方法
-### Ubuntu/Debian系统
+### Ubuntu/Debian
 ```bash
 sudo apt install libopencv-dev  # 安装OpenCV依赖库
 make                            # 编译项目
 ./fft_processor                 # 运行处理器程序
-
-### Ubuntu/Debian
-```bash
-sudo apt install libopencv-dev
-make
-./fft_processor
