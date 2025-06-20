@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.inc": "cpp",
+        "iostream": "cpp",
+        "complex": "cpp"
+    }
+}
