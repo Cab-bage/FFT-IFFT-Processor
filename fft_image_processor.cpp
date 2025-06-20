@@ -217,46 +217,50 @@ public:
     }
     
     // 低通滤波
-    Mat applyLowPassFilter(double cutoffRatio = 0.1) {
-        cout << "正在应用低通滤波..." << endl;
-        
-        // 复制频域数据
-        vector<vector<complex<double>>> filteredData = frequencyDomain;
-        
-        // 计算截止频率
-        int cutoffRadius = min(width, height) * cutoffRatio / 2;
-        int centerX = width / 2;
-        int centerY = height / 2;
-        
-        // 应用低通滤波器
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                double distance = sqrt(pow(i - centerY, 2) + pow(j - centerX, 2));
-                if (distance > cutoffRadius) {
-                    filteredData[i][j] = complex<double>(0, 0);
-                }
+    Mat applyLowPassFilterCentered(double cutoffRatio = 0.1) {
+    cout << "正在应用中心化低通滤波..." << endl;
+    
+    // 复制频域数据
+    vector<vector<complex<double>>> filteredData = frequencyDomain;
+    
+    // 计算截止半径
+    double cutoffRadius = min(width, height) * cutoffRatio / 2.0;
+    
+    // 应用低通滤波器 - 从中心计算距离
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            // 计算到中心的距离（考虑周期性）
+            int di = min(i, height - i);
+            int dj = min(j, width - j);
+            double distance = sqrt(di * di + dj * dj);
+            
+            if (distance > cutoffRadius) {
+                filteredData[i][j] = complex<double>(0, 0);
             }
         }
-        
-        // 执行IFFT
-        fft2D(filteredData, true);
-        
-        // 转换回图像
-        Mat filtered(height, width, CV_8U);
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                double real_part = real(filteredData[i][j]);
-                filtered.at<uchar>(i, j) = saturate_cast<uchar>(real_part);
-            }
-        }
-        
-        // 裁剪到原始大小
-        Rect roi(0, 0, originalImage.cols, originalImage.rows);
-        Mat result = filtered(roi);
-        
-        cout << "低通滤波完成，截止半径: " << cutoffRadius << endl;
-        return result;
     }
+    
+    // 执行IFFT
+    fft2D(filteredData, true);
+    
+    // 转换回图像
+    Mat filtered(height, width, CV_8U);
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            double real_part = real(filteredData[i][j]);
+            // 确保值在有效范围内
+            real_part = max(0.0, min(255.0, real_part));
+            filtered.at<uchar>(i, j) = saturate_cast<uchar>(real_part);
+        }
+    }
+    
+    // 裁剪到原始大小
+    Rect roi(0, 0, originalImage.cols, originalImage.rows);
+    Mat result = filtered(roi);
+    
+    cout << "中心化低通滤波完成，截止半径: " << cutoffRadius << endl;
+    return result;
+}
     
     // 验证FFT/IFFT可逆性
     void verifyReversibility() {
@@ -286,26 +290,31 @@ public:
     
     // 测试低通滤波效果
     void testLowPassFilter() {
-        cout << "\n=== 测试低通滤波效果 ===" << endl;
+    cout << "\n=== 测试低通滤波效果 ===" << endl;
+    
+    vector<double> cutoffRatios = {0.05, 0.1, 0.2, 0.3, 0.5};
+
+    for (double ratio : cutoffRatios) {
+        // 使用中心化方法
+        Mat filtered = applyLowPassFilterCentered(ratio);
         
-        vector<double> cutoffRatios = {0.05, 0.1, 0.2, 0.3};
+        double mse = calculateMSE(originalImage, filtered);
+        double psnr = calculatePSNR(originalImage, filtered);
         
-        for (double ratio : cutoffRatios) {
-            Mat filtered = applyLowPassFilter(ratio);
-            
-            double mse = calculateMSE(originalImage, filtered);
-            double psnr = calculatePSNR(originalImage, filtered);
-            
-            cout << "\n截止比例 " << ratio << ":" << endl;
-            cout << "  MSE: " << mse << endl;
-            cout << "  PSNR: " << psnr << " dB" << endl;
-            
-            // 保存到output文件夹
-            string filename = outputDir + "filtered_" + to_string(int(ratio * 100)) + ".png";
-            imwrite(filename, filtered);
-            cout << "  滤波图像已保存到: " << filename << endl;
-        }
+        cout << "\n截止比例 " << ratio << ":" << endl;
+        cout << "  MSE: " << mse << endl;
+        cout << "  PSNR: " << psnr << " dB" << endl;
+        
+        // 检查图像是否为空
+        Scalar meanVal = mean(filtered);
+        cout << "  平均像素值: " << meanVal[0] << endl;
+        
+        // 保存到output文件夹
+        string filename = outputDir + "filtered_" + to_string(int(ratio * 100)) + ".png";
+        imwrite(filename, filtered);
+        cout << "  滤波图像已保存到: " << filename << endl;
     }
+}
     
     // 生成详细报告
     void generateReport() {
@@ -334,7 +343,7 @@ public:
         report << "低通滤波效果分析:\n";
         vector<double> ratios = {0.05, 0.1, 0.2, 0.3};
         for (double ratio : ratios) {
-            Mat filtered = applyLowPassFilter(ratio);
+            Mat filtered = applyLowPassFilterCentered(ratio);
             double mse = calculateMSE(originalImage, filtered);
             double psnr = calculatePSNR(originalImage, filtered);
             
